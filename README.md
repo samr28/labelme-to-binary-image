@@ -20,6 +20,7 @@ FLAGS:
 
 ## Screenshots
 Original Image from LabelMe:
+
 ![Original Image](Example/example.jpg)
 
 `python toBinary.py Example/example.xml line jpg`:
