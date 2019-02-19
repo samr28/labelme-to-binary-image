@@ -9,13 +9,19 @@ filename = ''
 imageWidth = 0
 imageHeight = 0
 
-allowedFlags = ['-nosave', '-preview']
+validFlags = ['-nosave', '-preview']
+validSaveFileTypes = ['jpg', 'png']
 
 # Make sure that the array of flags is valid
 def checkFlags(flags):
     for flag in flags:
-        if flag not in allowedFlags:
+        if flag not in validFlags:
             return False
+    return True
+
+def checkFileType(filetype):
+    if filetype not in validSaveFileTypes:
+        return False
     return True
 
 # Create an image with the data in the polygons array
@@ -29,7 +35,7 @@ def generateImage(filename, preview, save):
         print('Opening preview')
         img.show()
     if save:
-        print('Saving image')
+        print('Saving image ' + filename)
         img.save(str(filename))
 
 # Parse the xml file and fill in the polygons array
@@ -58,18 +64,24 @@ def parseXML(file, searchObject):
             imageWidth = int(child[1].text)
       
 def main():
-    numRequiredArgs = 3
+    global filename
+    numRequiredArgs = 4
     args = sys.argv
     # Make sure that enough args were provided
     if (len(args) < numRequiredArgs):
-        print('Usage: python toBinary.py [FILE] [OBJECT_TYPE] [FLAGS]\n')
+        print('Usage: python toBinary.py [FILE] [OBJECT_TYPE] [OUTPUT_FILE_TYPE] [FLAGS]\n')
 
         print('FILE = filepath')
-        print('OBJECT_TYPE = line, robot, barrel')
+        print('OBJECT_TYPE = label to capture ex: line, robot, barrel')
+        print('OUTPUT_FILE_TYPE = jpg, png')
 
         print('\nFLAGS:')
         print(' -nosave      dont save image')
         print(' -preview     show image preview')
+        return
+
+    if not checkFileType(args[3]):
+        print('Invalid file type')
         return
 
     save = True
@@ -91,7 +103,12 @@ def main():
     parseXML(args[1], args[2])
     print('Loaded image: ' + filename + ' (' + str(imageWidth) + 'x' + str(imageHeight) + ')')
     print('Found ' + str(numFound) + ' of object "' + args[2] + '"')
+    if (numFound == 0):
+        print('Exiting: did not find any of object')
+        return
     print('Generating binary image')
+    filename = re.sub('\.\w+', '', filename)
+    filename = filename + '-' + args[2] + '.' + args[3]
     generateImage(filename, preview, save)      
       
 if __name__ == "__main__":
