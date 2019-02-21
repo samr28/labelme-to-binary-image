@@ -1,6 +1,7 @@
 import re
 import xml.etree.ElementTree as ET
 import sys
+import argparse
 from PIL import Image, ImageDraw
 
 polygons = []
@@ -8,21 +9,6 @@ numFound = 0
 filename = ''
 imageWidth = 0
 imageHeight = 0
-
-validFlags = ['-nosave', '-preview']
-validSaveFileTypes = ['jpg', 'png']
-
-# Make sure that the array of flags is valid
-def checkFlags(flags):
-    for flag in flags:
-        if flag not in validFlags:
-            return False
-    return True
-
-def checkFileType(filetype):
-    if filetype not in validSaveFileTypes:
-        return False
-    return True
 
 # Create an image with the data in the polygons array
 def generateImage(filename, preview, save):
@@ -39,14 +25,14 @@ def generateImage(filename, preview, save):
         img.save(str(filename))
 
 # Parse the xml file and fill in the polygons array
-def parseXML(file, searchObject):
+def parseXML(file, labels):
     global polygons, numFound, filename, imageWidth, imageHeight
     tree = ET.parse(file)
     root = tree.getroot()
     for child in root:
         if child.tag == 'object':
             objType = child[0].text
-            if objType == searchObject:
+            if objType in labels:
                 numFound += 1
                 for item in child:
                     if item.tag == 'polygon':
@@ -62,54 +48,32 @@ def parseXML(file, searchObject):
         elif child.tag == 'imagesize':
             imageHeight = int(child[0].text)
             imageWidth = int(child[1].text)
-      
-def main():
-    global filename
-    numRequiredArgs = 4
-    args = sys.argv
-    # Make sure that enough args were provided
-    if (len(args) < numRequiredArgs):
-        print('Usage: python toBinary.py [FILE] [OBJECT_TYPE] [OUTPUT_FILE_TYPE] [FLAGS]\n')
 
-        print('FILE = filepath')
-        print('OBJECT_TYPE = label to capture ex: line, robot, barrel')
-        print('OUTPUT_FILE_TYPE = jpg, png')
+parser = argparse.ArgumentParser(description='Convert LabelMe XML files to binary images.')
 
-        print('\nFLAGS:')
-        print(' -nosave      dont save image')
-        print(' -preview     show image preview')
-        return
+# Required arguments
+parser.add_argument('file', type=str, help='path to xml file')
+parser.add_argument('output', type=str, help='output file type', 
+                    choices=['png', 'jpg'])
+parser.add_argument('labels', type=str, nargs='+',
+                    help='labels to include in the image')
 
-    if not checkFileType(args[3]):
-        print('Invalid file type')
-        return
+# Optional flags
+parser.add_argument('--nosave', required=False, help='dont save image', 
+                    action='store_true')
+parser.add_argument('--preview', required=False, help='show image preview', 
+                    action='store_true')
 
-    save = True
-    preview = False
-
-    # Check for flags
-    if len(args) > numRequiredArgs:
-        # Parse rest as flags
-        flags = args[numRequiredArgs:]
-        if not checkFlags(flags):
-            print('Invalid flag provided!')
-            return
-        if '-nosave' in flags:
-            save = False
-        if '-preview' in flags:
-            preview = True
-
-    print('Start parsing xml')
-    parseXML(args[1], args[2])
-    print('Loaded image: ' + filename + ' (' + str(imageWidth) + 'x' + str(imageHeight) + ')')
-    print('Found ' + str(numFound) + ' of object "' + args[2] + '"')
-    if (numFound == 0):
-        print('Exiting: did not find any of object')
-        return
-    print('Generating binary image')
-    filename = re.sub('\.\w+', '', filename)
-    filename = filename + '-' + args[2] + '.' + args[3]
-    generateImage(filename, preview, save)      
-      
-if __name__ == "__main__":
-    main() 
+args = parser.parse_args()
+print('Start parsing xml')
+parseXML(args.file, args.labels)
+print('Found ' + str(numFound) + ' of ' + str(args.labels))
+if (numFound == 0):
+    print('Exiting: did not find any of object')
+    sys.exit()
+print('Generating binary image')
+filename = re.sub('\.\w+', '', filename)
+for label in args.labels:
+    filename = filename + '-' + label
+filename = filename + '.' + args.output
+generateImage(filename, args.preview, not args.nosave)
