@@ -1,5 +1,6 @@
 import re
 import xml.etree.ElementTree as ET
+import json
 import sys
 import argparse
 from PIL import Image, ImageDraw
@@ -23,6 +24,26 @@ def generateImage(filename, preview, save):
     if save:
         print('Saving image ' + filename)
         img.save(str(filename))
+
+def parseJSON(file, labels):
+    global polygons, numFound, filename, imageWidth, imageHeight
+    with open(file) as f:
+        data = json.load(f)
+    imageHeight = data['imageHeight']
+    imageWidth = data['imageWidth']
+    for shape in data['shapes']:
+        if shape['label'] in labels:
+            numFound += 1
+            points = []
+            for point in shape['points']:
+                x = point[0]
+                y = point[1]
+                points.append((float(x), float(y)))
+            polygons.append(points)
+    # Remove ".json"
+    filename = re.sub(r'\.json', '', file)
+    # Remove folders
+    filename = re.sub(r'\w*\/', '', file)
 
 # Parse the xml file and fill in the polygons array
 def parseXML(file, labels):
@@ -49,10 +70,10 @@ def parseXML(file, labels):
             imageHeight = int(child[0].text)
             imageWidth = int(child[1].text)
 
-parser = argparse.ArgumentParser(description='Convert LabelMe XML files to binary images.')
+parser = argparse.ArgumentParser(description='Convert LabelMe XML/JSON files to binary images.')
 
 # Required arguments
-parser.add_argument('file', type=str, help='path to xml file')
+parser.add_argument('file', type=str, help='path to input file (json/xml)')
 parser.add_argument('output', type=str, help='output file type', 
                     choices=['png', 'jpg'])
 parser.add_argument('labels', type=str, nargs='+',
@@ -65,14 +86,21 @@ parser.add_argument('--preview', required=False, help='show image preview',
                     action='store_true')
 
 args = parser.parse_args()
-print('Start parsing xml')
-parseXML(args.file, args.labels)
+if bool(re.search(r'\.json', args.file)):
+    print('Start parsing json')
+    parseJSON(args.file, args.labels)
+elif bool(re.search(r'\.xml', args.file)):
+    print('Start parsing xml')
+    parseXML(args.file, args.labels)
+else:
+    print('Invalid file specified. Make sure that it is either XML or JSON')
+    exit()
 print('Found ' + str(numFound) + ' of ' + str(args.labels))
 if (numFound == 0):
     print('Exiting: did not find any of object')
     sys.exit()
 print('Generating binary image')
-filename = re.sub('\.\w+', '', filename)
+filename = re.sub(r'\.\w+', '', filename)
 for label in args.labels:
     filename = filename + '-' + label
 filename = filename + '.' + args.output
