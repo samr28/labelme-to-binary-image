@@ -5,15 +5,18 @@ This tool allows you to convert images from the [web](http://labelme.csail.mit.e
 ## Usage
 
 ```bash
-python toBinary.py [-h] [--nosave] [--preview] file {png,jpg} labels [labels ...]
+python toBinary.py [-h] [--nosave] [--preview] file/folder {png,jpg} labels [labels ...]
 
-FILE = path to xml/json input file
-OUTPUT_FILE_TYPE = jpg, png
-LABELS = space seperated list of label to capture ex: "line robot barrel"
+positional arguments:
+  file/folder        path to input file/folder (json/xml/folder)
+  {png,jpg}          output file type
+  labels             labels to include in the image
 
-FLAGS:
- --nosave      dont save image
- --preview     show image preview
+optional arguments:
+  -h, --help         show this help message and exit
+  --savedir SAVEDIR  directory to save images in (default: masks)
+  --nosave           dont save image
+  --preview          show image preview
 ```
 
 ## Screenshots
@@ -26,6 +29,3 @@ Original Image from LabelMe:
 
 `python toBinary.py Example/example.xml jpg barrel`:
 ![Original Image](Example/example-barrel.jpg)
-
-## Future goals
-- Higher level script to automate large jobs

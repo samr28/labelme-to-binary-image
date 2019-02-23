@@ -3,7 +3,11 @@ import xml.etree.ElementTree as ET
 import json
 import sys
 import argparse
+from os import listdir, makedirs
+from os.path import isfile, join, exists
 from PIL import Image, ImageDraw
+
+savedir = 'masks'
 
 polygons = []
 numFound = 0
@@ -23,7 +27,38 @@ def generateImage(filename, preview, save):
         img.show()
     if save:
         print('Saving image ' + filename)
-        img.save(str(filename))
+        img.save(str(join(savedir, filename)))
+
+# Check if a file is either json or xml
+def isValidFile(file):
+    if bool(re.search(r'\.json', file)) or bool(re.search(r'\.xml', file)):
+        return True
+    return False
+
+# Reset vars to default values
+# Used when loading a new file
+def clearVars():
+    global polygons, numFound, filename, imageWidth, imageHeight
+    polygons = []
+    numFound = 0
+    filename = ''
+    imageWidth = 0
+    imageHeight = 0
+
+def parseFile(file, labels):
+    clearVars()
+    print('Start parsing ' + file)
+    if bool(re.search(r'\.json', file)):
+        # JSON file passed in
+        parseJSON(file, labels)
+    elif bool(re.search(r'\.xml', file)):
+        # XML file passed in
+        parseXML(file, labels)
+    elif bool(re.search(r'\.', file)):
+        # Invalid file format passed in
+        print('Invalid file specified. Make sure that it is either XML or JSON')
+        return False
+    return True
 
 def parseJSON(file, labels):
     global polygons, numFound, filename, imageWidth, imageHeight
@@ -73,35 +108,51 @@ def parseXML(file, labels):
 parser = argparse.ArgumentParser(description='Convert LabelMe XML/JSON files to binary images.')
 
 # Required arguments
-parser.add_argument('file', type=str, help='path to input file (json/xml)')
+parser.add_argument('file/folder', type=str, help='path to input file/folder (json/xml/folder)')
 parser.add_argument('output', type=str, help='output file type', 
                     choices=['png', 'jpg'])
 parser.add_argument('labels', type=str, nargs='+',
                     help='labels to include in the image')
 
 # Optional flags
+parser.add_argument('--savedir', required=False, help='directory to save images in (default: masks)')
 parser.add_argument('--nosave', required=False, help='dont save image', 
                     action='store_true')
 parser.add_argument('--preview', required=False, help='show image preview', 
                     action='store_true')
 
 args = parser.parse_args()
-if bool(re.search(r'\.json', args.file)):
-    print('Start parsing json')
-    parseJSON(args.file, args.labels)
-elif bool(re.search(r'\.xml', args.file)):
-    print('Start parsing xml')
-    parseXML(args.file, args.labels)
+
+if args.savedir:
+    savedir = args.savedir
+
+if not args.nosave:
+    if not exists(savedir):
+        makedirs(savedir)
+
+# List of files to convert
+files = []
+if isfile(args.file):
+    files.append(args.file)
 else:
-    print('Invalid file specified. Make sure that it is either XML or JSON')
-    exit()
-print('Found ' + str(numFound) + ' of ' + str(args.labels))
-if (numFound == 0):
-    print('Exiting: did not find any of object')
-    sys.exit()
-print('Generating binary image')
-filename = re.sub(r'\.\w+', '', filename)
-for label in args.labels:
-    filename = filename + '-' + label
-filename = filename + '.' + args.output
-generateImage(filename, args.preview, not args.nosave)
+    # Dir passed in
+    print('Start parsing items from directory')
+    filesInDir = [f for f in listdir(args.file) if isfile(join(args.file, f))]
+    for f in filesInDir:
+        files.append(str(join(args.file, f)))
+for f in files:
+    print
+    if not isValidFile(f):
+        print('Skipping ' + f)
+    else:
+        parseFile(f, args.labels)
+        if numFound == 0:
+            print('Skipping ' + str(f) + ' (found 0 labels)')
+        else:
+            print('Found ' + str(numFound) + ' of ' + str(args.labels))
+            print('Generating binary image')
+            filename = re.sub(r'\.\w+', '', filename)
+            for label in args.labels:
+                filename = filename + '-' + label
+            filename = filename + '.' + args.output
+            generateImage(filename, args.preview, not args.nosave)
