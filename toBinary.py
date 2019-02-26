@@ -15,13 +15,19 @@ filename = ''
 imageWidth = 0
 imageHeight = 0
 
+black = (0, 0, 0)
+white = (255, 255, 255)
+
+bgcolor = white
+fgcolor = black
+
 # Create an image with the data in the polygons array
 def generateImage(filename, preview, save):
-    img = Image.new('RGB', (imageWidth, imageHeight), "white")
+    img = Image.new('RGB', (imageWidth, imageHeight), bgcolor)
     pixels = img.load()
     draw = ImageDraw.Draw(img)
     for polygon in polygons:
-        draw.polygon(polygon, fill=(0, 0, 0))
+        draw.polygon(polygon, fill=fgcolor)
     if preview:
         print('Opening preview')
         img.show()
@@ -120,6 +126,10 @@ parser.add_argument('--nosave', required=False, help='dont save image',
                     action='store_true')
 parser.add_argument('--preview', required=False, help='show image preview', 
                     action='store_true')
+parser.add_argument('--bgcolor', required=False, help='background color (default: white)', 
+                    choices=['white', 'black'])
+parser.add_argument('--fgcolor', required=False, help='foreground/label color (default: black)', 
+                    choices=['white', 'black'])
 
 args = parser.parse_args()
 
@@ -129,6 +139,12 @@ if args.savedir:
 if not args.nosave:
     if not exists(savedir):
         makedirs(savedir)
+
+if args.bgcolor:
+    bgcolor = args.bgcolor
+
+if args.fgcolor:
+    fgcolor = args.fgcolor
 
 # List of files to convert
 files = []
