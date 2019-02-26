@@ -108,7 +108,7 @@ def parseXML(file, labels):
 parser = argparse.ArgumentParser(description='Convert LabelMe XML/JSON files to binary images.')
 
 # Required arguments
-parser.add_argument('file/folder', type=str, help='path to input file/folder (json/xml/folder)')
+parser.add_argument('file', metavar='file/folder', type=str, help='path to input file/folder (json/xml/folder)')
 parser.add_argument('output', type=str, help='output file type', 
                     choices=['png', 'jpg'])
 parser.add_argument('labels', type=str, nargs='+',
