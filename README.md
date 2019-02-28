@@ -17,6 +17,8 @@ optional arguments:
   --savedir SAVEDIR  directory to save images in (default: masks)
   --nosave           dont save image
   --preview          show image preview
+  --bgcolor COLOR    background color
+  --fgcolor COLOR    foreground (label) color
 ```
 
 ## Screenshots
