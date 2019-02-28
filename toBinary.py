@@ -17,6 +17,10 @@ imageHeight = 0
 
 black = (0, 0, 0)
 white = (255, 255, 255)
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
+colors = ['black', 'white', 'red', 'green', 'blue']
 
 bgcolor = white
 fgcolor = black
@@ -127,9 +131,9 @@ parser.add_argument('--nosave', required=False, help='dont save image',
 parser.add_argument('--preview', required=False, help='show image preview', 
                     action='store_true')
 parser.add_argument('--bgcolor', required=False, help='background color (default: white)', 
-                    choices=['white', 'black'])
+                    choices=colors)
 parser.add_argument('--fgcolor', required=False, help='foreground/label color (default: black)', 
-                    choices=['white', 'black'])
+                    choices=colors)
 
 args = parser.parse_args()
 
